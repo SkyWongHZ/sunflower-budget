@@ -1,1 +1,3 @@
 node_demo/*/node_modules/
+node_demo/nest_demo/docker-compose.yml
+node_demo/nest_demo/.env
