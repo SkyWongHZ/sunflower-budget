@@ -23,6 +23,6 @@ async function bootstrap() {
       forbidNonWhitelisted: true, // 禁止未定义的属性
     })
   );
-  await app.listen(3000,'0.0.0.0');
+  await app.listen(3000);
 }
 bootstrap();
