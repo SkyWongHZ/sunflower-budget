@@ -4,10 +4,14 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { NotFoundException } from '@nestjs/common';
+import { LoggerService } from '../common/logger/logger.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+     private readonly logger: LoggerService
+    ) {}
   async create(createUserDto: CreateUserDto) {
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
     return this.prisma.user.create({
@@ -17,9 +21,7 @@ export class UsersService {
       },
       select: {
         id: true,
-        email: true,
         username: true,
-        age: true,
         isActive: true,
         createdAt: true,
         password: false,
@@ -27,8 +29,9 @@ export class UsersService {
     });
   }
 
-  findAll() {
-    return  this.prisma.user.findMany({
+  async findAll() {
+    this.logger.log('Fetching all users', 'UsersService');
+    const  users=await this.prisma.user.findMany({
       select:{
         id:true,
         email:true,
@@ -38,6 +41,8 @@ export class UsersService {
         createdAt:true,
       }
     })
+    this.logger.log(`Found ${users.length} users`, 'UsersService');
+    return users
   }
 
   async findOne(id: string) {
