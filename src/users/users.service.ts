@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { NotFoundException } from '@nestjs/common';
 import { LoggerService } from '../common/logger/logger.service';
+import { wrapList } from '../common/utils/format-util';
 
 @Injectable()
 export class UsersService {
@@ -22,7 +23,6 @@ export class UsersService {
       select: {
         id: true,
         username: true,
-        isActive: true,
         createdAt: true,
         password: false,
       },
@@ -34,15 +34,12 @@ export class UsersService {
     const  users=await this.prisma.user.findMany({
       select:{
         id:true,
-        email:true,
         username:true,
-        age:true,
-        isActive:true,
         createdAt:true,
       }
     })
     this.logger.log(`Found ${users.length} users`, 'UsersService');
-    return users
+    return wrapList(users,{total:300})
   }
 
   async findOne(id: string) {
@@ -50,10 +47,7 @@ export class UsersService {
       where:{id},
       select:{
         id:true,
-        email:true,
         username:true,
-        age:true,
-        isActive:true,
         createdAt:true,
       }
     })
@@ -74,10 +68,7 @@ export class UsersService {
         data: updateUserDto,
         select: {
           id: true,
-          email: true,
           username: true,
-          age: true,
-          isActive: true,
           updatedAt: true,
         },
       });
@@ -93,7 +84,6 @@ export class UsersService {
         where:{id},
         select:{
           id:true,
-          email:true,
           username:true,
         }
       })

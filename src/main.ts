@@ -5,6 +5,7 @@ import {
 } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import {TransformInterceptor}  from  './common/interceptors/transform.interceptor'
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
@@ -23,6 +24,10 @@ async function bootstrap() {
       forbidNonWhitelisted: true, // 禁止未定义的属性
     })
   );
+
+  // 注册全局响应拦截器
+  app.useGlobalInterceptors(new TransformInterceptor());
+
   await app.listen(3000);
 }
 bootstrap();
