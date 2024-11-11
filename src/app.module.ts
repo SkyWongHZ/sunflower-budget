@@ -8,7 +8,7 @@ import { TagsModule } from './tags/tags.module';
 import { AuthModule } from './auth/auth.module';
 
 @Module({
-  imports: [ UsersModule,LoggerModule, RecordsModule, TagsModule, AuthModule],
+  imports: [UsersModule, LoggerModule, RecordsModule, TagsModule, AuthModule],
   controllers: [AppController],
   providers: [AppService],
 })

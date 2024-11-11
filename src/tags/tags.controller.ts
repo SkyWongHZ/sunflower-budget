@@ -1,20 +1,39 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Request,
+  Query,
+} from '@nestjs/common';
 import { TagsService } from './tags.service';
 import { CreateTagDto } from './dto/create-tag.dto';
 import { UpdateTagDto } from './dto/update-tag.dto';
+import { QueryTagDto } from './dto/query-tag.dto';
+import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('tags')
+@UseGuards(AuthGuard)
 export class TagsController {
+  private readonly testUserId = '672ae429e1d74edf0957a98b';
   constructor(private readonly tagsService: TagsService) {}
 
   @Post()
-  create(@Body() createTagDto: CreateTagDto) {
-    return this.tagsService.create(createTagDto);
+  create(@Body() createTagDto: CreateTagDto, @Request() req) {
+    return this.tagsService.create(createTagDto, req.user.id);
   }
 
   @Get()
-  findAll() {
-    return this.tagsService.findAll();
+  findAll(@Query() query: QueryTagDto, @Request() req) {
+    return this.tagsService.findAll({
+      userId: req.user.id,
+      ...query,
+    });
   }
 
   @Get(':id')
@@ -22,13 +41,13 @@ export class TagsController {
     return this.tagsService.findOne(+id);
   }
 
-  @Patch(':id')
+  @Put(':id')
   update(@Param('id') id: string, @Body() updateTagDto: UpdateTagDto) {
-    return this.tagsService.update(+id, updateTagDto);
+    return this.tagsService.update(id, updateTagDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.tagsService.remove(+id);
+  remove(@Param('id') id: string, @Request() req) {
+    return this.tagsService.remove(id, req.user.id);
   }
 }
