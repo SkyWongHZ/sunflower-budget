@@ -11,7 +11,6 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
   async login(loginDto: LoginDto) {
-    const hashedPassword = await bcrypt.hash(loginDto.password, 10);
 
     const user = await this.prisma.user.findUnique({
       where: { username: loginDto.username },

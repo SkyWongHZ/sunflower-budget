@@ -18,28 +18,27 @@ import { QueryTagDto } from './dto/query-tag.dto';
 import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('tags')
-@UseGuards(AuthGuard)
+// @UseGuards(AuthGuard)
 export class TagsController {
   private readonly testUserId = '672ae429e1d74edf0957a98b';
   constructor(private readonly tagsService: TagsService) {}
 
   @Post()
-  create(@Body() createTagDto: CreateTagDto, @Request() req) {
-    return this.tagsService.create(createTagDto, req.user.id);
-  }
+  create(@Body() createTagDto: CreateTagDto, ) {
+    return this.tagsService.create(createTagDto);
+  } 
 
   @Get()
-  findAll(@Query() query: QueryTagDto, @Request() req) {
+  findAll(@Query() query: QueryTagDto) {
     return this.tagsService.findAll({
-      userId: req.user.id,
       ...query,
     });
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.tagsService.findOne(+id);
-  }
+  // @Get(':id')
+  // findOne(@Param('id') id: string) {
+  //   return this.tagsService.findOne(+id);
+  // }
 
   @Put(':id')
   update(@Param('id') id: string, @Body() updateTagDto: UpdateTagDto) {
@@ -47,7 +46,7 @@ export class TagsController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @Request() req) {
-    return this.tagsService.remove(id, req.user.id);
+  remove(@Param('id') id: string, ) {
+    return this.tagsService.remove(id);
   }
 }
