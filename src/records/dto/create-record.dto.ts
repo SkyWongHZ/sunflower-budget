@@ -9,31 +9,29 @@ import {
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
-enum TagType {
+enum RecordType {
   INCOME = 'income',
   EXPENSE = 'expense',
 }
 
 export class CreateRecordDto {
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  amount: number;
+
   @IsString()
   tagId: string;
 
-  @IsString()
-  startDate: string;
+  @IsEnum(RecordType)
+  type: RecordType;
+                  
+  // @IsString()
+  // startDate: string;
 
   @IsString()
-  endDate: string;
+  remark?: string;
 
-  @IsEnum(TagType)
-  type: TagType;
-
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  pageIndex: number;
-
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  pageSize: number;
+  @IsString()
+  recordTime: string;
 }

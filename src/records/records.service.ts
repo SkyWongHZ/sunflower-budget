@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable ,ConflictException} from '@nestjs/common';
 import { CreateRecordDto } from './dto/create-record.dto';
 import { UpdateRecordDto } from './dto/update-record.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -6,9 +6,45 @@ import { PrismaService } from '../prisma/prisma.service';
 @Injectable()
 export class RecordsService {
   constructor(private prisma: PrismaService) {}
-  create(createRecordDto: CreateRecordDto) {
-    return 'This action adds a new record';
+  // create(createRecordDto: CreateRecordDto) {
+  //   return 'This action adds a new record';
+  // }
+
+  async create(createRecordDto: CreateRecordDto) {
+    return this.prisma.record.create({
+      data: {
+        isDeleted: false,
+        ...createRecordDto,
+      },
+      select: {
+        id: true,
+      },
+    });
   }
+
+
+  // export class CreateRecordDto {
+  //   @Type(() => Number)
+  //   @IsInt()
+  //   @Min(1)
+  //   amount: number;
+  
+  //   @IsString()
+  //   tagId: string;
+  
+  //   @IsEnum(RecordType)
+  //   type: RecordType;
+                    
+  //   // @IsString()
+  //   // startDate: string;
+  
+  //   @IsString()
+  //   remark?: string;
+  
+  //   @IsString()
+  //   recordTime: string;
+  // }
+
 
 
   async findAll(params: {

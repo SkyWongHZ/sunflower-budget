@@ -43,8 +43,8 @@ model Record {
   type       String   @default("expense") // 'income' | 'expense'
   remark     String?
   recordTime DateTime
-  userId     String   @db.ObjectId
-  user       User     @relation(fields: [userId], references: [id])
+  userId     String?   @db.ObjectId
+  user       User?     @relation(fields: [userId], references: [id])
   tagId      String   @db.ObjectId
   tag        Tag      @relation(fields: [tagId], references: [id])
   createdAt  DateTime @default(now())
@@ -54,3 +54,4 @@ model Record {
 
   @@map("records")
 }
+
