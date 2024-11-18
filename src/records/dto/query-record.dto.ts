@@ -16,7 +16,8 @@ import {
   
   export class QueryRecordDto {
     @IsString()
-    tagId: string;
+    @IsOptional()
+    tagId?: string;
   
     @IsString()
     @IsOptional()

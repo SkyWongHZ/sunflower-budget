@@ -13,8 +13,9 @@ export class RecordsService {
   async create(createRecordDto: CreateRecordDto) {
     return this.prisma.record.create({
       data: {
-        isDeleted: false,
         ...createRecordDto,
+        isDeleted: false,
+        recordTime:new  Date(),
       },
       select: {
         id: true,
@@ -48,7 +49,7 @@ export class RecordsService {
 
 
   async findAll(params: {
-    tagId:string;
+    tagId?:string;
     type?: 'income' | 'expense';
     pageIndex: number;
     pageSize: number;
@@ -59,7 +60,7 @@ export class RecordsService {
     const skip = (pageIndex - 1) * pageSize;
     const  where= {
       isDeleted: false,
-      tagId,
+      ...(tagId&&{tagId}) ,
       ...(type && { type }),
       ...(startDate&&{ recordTime:{
         gte:new Date(startDate)
@@ -107,11 +108,41 @@ export class RecordsService {
     return `This action returns a #${id} record`;
   }
 
-  update(id: number, updateRecordDto: UpdateRecordDto) {
-    return `This action updates a #${id} record`;
+  // update(id: number, updateRecordDto: UpdateRecordDto) {
+  //   return `This action updates a #${id} record`;
+  // }
+
+  async update(id: string, updateRecordDto: UpdateRecordDto) {
+    return await this.prisma.record.update({
+      where: {
+        id,
+        isDeleted: false,
+      },
+      data: updateRecordDto,
+      select: {
+        id: true,
+      },
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} record`;
+
+  // remove(id: number) {
+  //   return `This action removes a #${id} record`;
+  // }
+
+  async remove(id: string) {
+    return await this.prisma.record.update({
+      where: {
+        id,
+        isDeleted: false,
+      },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+      select: {
+        id: true,
+      },
+    });
   }
 }

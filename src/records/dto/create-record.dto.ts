@@ -32,6 +32,6 @@ export class CreateRecordDto {
   @IsString()
   remark?: string;
 
-  @IsString()
-  recordTime: string;
+  // @IsString()
+  // recordTime: string;
 }
