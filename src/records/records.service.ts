@@ -2,6 +2,7 @@ import { Injectable ,ConflictException} from '@nestjs/common';
 import { CreateRecordDto } from './dto/create-record.dto';
 import { UpdateRecordDto } from './dto/update-record.dto';
 import { PrismaService } from '../prisma/prisma.service';
+// import moment   from   'moment';
 
 @Injectable()
 export class RecordsService {
@@ -15,7 +16,6 @@ export class RecordsService {
       data: {
         ...createRecordDto,
         isDeleted: false,
-        recordTime:new  Date(),
       },
       select: {
         id: true,
@@ -63,10 +63,10 @@ export class RecordsService {
       ...(tagId&&{tagId}) ,
       ...(type && { type }),
       ...(startDate&&{ recordTime:{
-        gte:new Date(startDate)
+        gte:startDate
       }}),
       ...(endDate&&{recordTime:{
-        lte:new Date(endDate) 
+        lte:endDate
       }}),
     }
     const [records, total] = await Promise.all([
@@ -97,9 +97,15 @@ export class RecordsService {
       }),
     ]);
 
+    const  income= records.filter(item=>item.type==='income').reduce((prev,cur)=>prev+cur.amount,0)
+    const  expense= records.filter(item=>item.type==='expense').reduce((prev,cur)=>prev+cur.amount,0)
+    const netIncome=income-expense
+    console.log('income: ', income);
+
     return {
       list: records,
       total,
+      netIncome,
     };
   }
 

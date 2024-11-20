@@ -27,7 +27,6 @@ export class TagsService {
     });
   }
 
-
   async findAll(params: {
     type?: 'income' | 'expense';
     pageIndex: number;
@@ -88,18 +87,30 @@ export class TagsService {
   }
 
   async remove(id: string) {
-    return await this.prisma.tag.update({
-      where: {
-        id,
-        isDeleted: false,
-      },
-      data: {
-        isDeleted: true,
-        deletedAt: new Date(),
-      },
-      select: {
-        id: true,
-      },
-    });
+    return await this.prisma.$transaction([
+      this.prisma.record.updateMany({
+        where: {
+          tagId: id,
+          isDeleted: false,
+        },
+        data: {
+          isDeleted: true,
+          deletedAt: new Date(),
+        },
+      }),
+      this.prisma.tag.update({
+        where: {
+          id,
+          isDeleted: false,
+        },
+        data: {
+          isDeleted: true,
+          deletedAt: new Date(),
+        },
+        select: {
+          id: true,
+        },
+      }),
+    ]);
   }
 }

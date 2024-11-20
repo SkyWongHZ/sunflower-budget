@@ -42,7 +42,7 @@ model Record {
   amount     Float
   type       String   @default("expense") // 'income' | 'expense'
   remark     String?
-  recordTime DateTime
+  recordTime String
   userId     String?   @db.ObjectId
   user       User?     @relation(fields: [userId], references: [id])
   tagId      String   @db.ObjectId
