@@ -13,21 +13,21 @@ export class UsersService {
     private prisma: PrismaService,
      private readonly logger: LoggerService
     ) {}
-  async create(createUserDto: CreateUserDto) {
-    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-    return this.prisma.user.create({
-      data: {
-        ...createUserDto,
-        password: hashedPassword,
-      },
-      select: {
-        id: true,
-        username: true,
-        createdAt: true,
-        password: false,
-      },
-    });
-  }
+  // async create(createUserDto: CreateUserDto) {
+  //   const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+  //   return this.prisma.user.create({
+  //     data: {
+  //       ...createUserDto,
+  //       password: hashedPassword,
+  //     },
+  //     select: {
+  //       id: true,
+  //       username: true,
+  //       createdAt: true,
+  //       password: false,
+  //     },
+  //   });
+  // }
 
   async findAll() {
     this.logger.log('Fetching all users', 'UsersService');

@@ -10,12 +10,13 @@ datasource db {
 
 model User {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  username  String   @unique
+  username  String?   
   password  String
   tags      Tag[]    // 关联
   records   Record[] // 关联
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  email     String  @unique
 
   @@map("users")
 }
