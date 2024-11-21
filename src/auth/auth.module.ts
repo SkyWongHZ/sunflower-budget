@@ -5,9 +5,11 @@ import { JwtModule } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailModule } from '../mail/mail.module';
 import { jwtConstants } from './constants';
+import { RabbitmqModule } from 'src/rabbitmq/rabbitmq.module';
 
 @Module({
   imports: [
+    RabbitmqModule,
     MailModule,
     JwtModule.register({
       global: true,
