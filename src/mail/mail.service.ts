@@ -9,13 +9,12 @@ export class MailService {
       to: email,
       subject: '验证码',
       html: `
-            <div style="padding: 20px;">
-                <h2>您的验证码是：</h2>
-                <h1 style="color: #1a73e8;">${code}</h1>
-                <p>验证码5分钟内有效</p>
-            </div>
-        `,
-        
+              <div style="padding: 20px;">
+                  <h2>您的验证码是：</h2>
+                  <h1 style="color: #1a73e8;">${code}</h1>
+                  <p>验证码5分钟内有效</p>
+              </div>
+          `,
     });
   }
 }

@@ -54,7 +54,6 @@ export class AuthService {
       code,
       expires: Date.now() + 5*60*1000, // 5分钟过期
     });
-    console.log('codeMap: ', this.codeMap);
   }
 
   async  verifyCode(email:string,code:string){
