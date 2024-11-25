@@ -8,9 +8,13 @@ import { TagsModule } from './tags/tags.module';
 import { AuthModule } from './auth/auth.module';
 import { MailModule } from './mail/mail.module';
 import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
+import { TasksModule } from './tasks/tasks.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { StatisticModule } from './statistic/statistic.module';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     UsersModule,
     LoggerModule,
     RecordsModule,
@@ -18,6 +22,8 @@ import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
     AuthModule,
     MailModule,
     RabbitmqModule,
+    TasksModule,
+    StatisticModule,
   ],
   controllers: [AppController],
   providers: [AppService],

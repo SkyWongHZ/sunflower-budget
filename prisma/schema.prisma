@@ -56,3 +56,23 @@ model Record {
   @@map("records")
 }
 
+
+model Statistics {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  type        String    // daily(日统计) 或 monthly(月统计)
+  date        String  // 统计日期
+  totalAmount Float     // 总金额
+  totalCount  Int      // 总笔数
+  income      Float    // 收入金额
+  expense     Float    // 支出金额
+  tagStats    Json?    // 标签统计，使用 JSON 存储
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("statistics")
+  @@index([type, date]) // 创建复合索引提高查询性能
+}
+
+
+
+
