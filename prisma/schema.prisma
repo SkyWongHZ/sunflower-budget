@@ -69,8 +69,9 @@ model Statistics {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  
+  @@unique([type, date],name:"type_date")// 创建复合索引提高查询性能
   @@map("statistics")
-  @@index([type, date]) // 创建复合索引提高查询性能
 }
 
 

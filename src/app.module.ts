@@ -10,7 +10,7 @@ import { MailModule } from './mail/mail.module';
 import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
 import { TasksModule } from './tasks/tasks.module';
 import { ScheduleModule } from '@nestjs/schedule';
-import { StatisticModule } from './statistic/statistic.module';
+import { StatisticsModule } from './statistic/statistic.module';
 
 @Module({
   imports: [
@@ -23,7 +23,7 @@ import { StatisticModule } from './statistic/statistic.module';
     MailModule,
     RabbitmqModule,
     TasksModule,
-    StatisticModule,
+    StatisticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

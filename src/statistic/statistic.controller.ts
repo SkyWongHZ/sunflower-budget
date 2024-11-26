@@ -6,10 +6,10 @@ import { StatisticDto } from './dto/statistic.dto';
 export class StatisticController {
   constructor(private readonly statisticService: StatisticService) {}
 
-  // @Post()
-  // async triggerStatistic(@Body() statisticDto: StatisticDto) {
-  //   // return this.statisticService.create(statisticDto);
-  // }
+  @Post("trigger")
+  async triggerStatistic(@Body() statisticDto: StatisticDto) {
+    return this.statisticService.trigger(statisticDto);
+  }
 
   @Get("getStatistic")
   async getStatistic(@Query() statisticDto: StatisticDto) {  

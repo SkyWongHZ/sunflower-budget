@@ -1,28 +1,9 @@
 import { Injectable,NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import moment  from   'moment'
+import * as moment  from   'moment'
+import {StatisticData,TagStats}  from '../common/types/types'
 
-interface TagStats{
-  "name": string,   
-  "icon": string,   
-  "type": string,   
-  "count": number,  
-  "amount": number  
- 
-}
 
-interface  StatisticData{
-  "id":string
-  "type":        string    // daily(日统计) 或 monthly(月统计)
-  "date":        string  // 统计日期
-  "totalAmount": number     // 总金额
-  "totalCount" : number      // 总笔数
-  "income":      number    // 收入金额
-  "expense":     number    // 支出金额
-  tagStats  :Record<string,TagStats>
-  "updatedAt": string  
-  "createdAt": string,    // 创建时间
-}
 
 @Injectable()
 export class StatisticService {
@@ -60,6 +41,148 @@ export class StatisticService {
       }
   }
 
+  async trigger(params){
+    const { type:statType, date} = params;
+    const formattedDate = moment(date).format('YYYY-MM-DD');
+     // 测试查询条件
+     const testQuery = await this.prisma.record.findMany({
+      where: {
+        recordTime: {
+          startsWith: formattedDate
+        }
+      },
+      distinct: ['type']  // 查看所有可能的 type 值
+    });
+    console.log('数据库中的 type 值:', testQuery.map(r => r.type));
+    let startDate,endDate
+    if(statType==='monthly'){
+      startDate = moment(formattedDate).startOf('month').format('YYYY-MM-DD HH:mm:ss');
+      endDate = moment(formattedDate).endOf('month').format('YYYY-MM-DD HH:mm:ss');
 
+    }else if(statType==='daily'){
+      startDate = moment(formattedDate).startOf('day').format('YYYY-MM-DD HH:mm:ss');
+      endDate = moment(formattedDate).endOf('day').format('YYYY-MM-DD HH:mm:ss');
+    }
+
+
+   
+    // 2. 先查询当天所有记录（不带任何条件）
+    const allDayRecords = await this.prisma.record.findMany({
+      where: {
+        recordTime: {
+          startsWith: formattedDate
+        }
+      },
+      include: {
+        tag: true,
+      },
+    });
+    console.log('2. 当天所有记录:', allDayRecords);
+
+    // 3. 查询未删除的记录
+    const unDeletedRecords = await this.prisma.record.findMany({
+      where: {
+        isDeleted: false,
+        recordTime: {
+          startsWith: formattedDate
+        }
+      },
+      include: {
+        tag: true,
+      },
+    });
+    console.log('3. 未删除的记录:', unDeletedRecords);
+
+    // 4. 按类型查询
+    const typeRecords = await this.prisma.record.findMany({
+      where: {
+        type:statType,
+        recordTime: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      include: {
+        tag: true,
+      },
+    });
+    console.log('4. 指定类型的记录:', typeRecords);
+   
+    const records= await  this.prisma.record.findMany({
+      where: {
+        // type:statType,
+        recordTime: {
+          gte: startDate,
+          lte: endDate,
+        },
+        isDeleted: false
+      },
+      include: {
+        tag: true,
+      },
+    })
+    console.log('records',records);
+    let totalAmount=0,income=0,expense=0,tagStatObj={}
+    records.forEach((item)=>{
+      totalAmount+=item.amount     
+      if(item.type==='income'){
+        income+=item.amount
+      }else if(item.type==='expense'){
+        expense+=item.amount
+      }  
+      const tagId=item.tag.id 
+      if(!tagStatObj[tagId] ){
+        tagStatObj[tagId]={
+          name:item.tag.name,
+          icon:item.tag.icon,
+          type:item.tag.type,
+          amount:0,
+          count:0,
+        }
+      }
+      tagStatObj[tagId].amount+=item.amount
+      tagStatObj[tagId].count+=1
+     
+    })
+
+    await this.prisma.statistics.upsert({
+      where: {
+        type_date: {
+          type:statType,
+          date,
+        }
+        
+      },
+      update: {
+        totalAmount: totalAmount,
+        income: income,
+        expense: expense,
+        date: formattedDate,
+        type: statType,
+        totalCount:records.length,
+        tagStats:tagStatObj,
+        updatedAt: new Date()
+      },
+      create: {
+        totalAmount: totalAmount,
+        income: income,
+        expense: expense,
+        date: formattedDate,
+        type: statType,
+        totalCount:records.length,
+        tagStats:tagStatObj,
+      },
+    })
+
+    
+    return {
+      message: `${type}统计已完成，统计日期：${date}`
+    };
+
+  }
+  
+  
+
+  
  
 }
