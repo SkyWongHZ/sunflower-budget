@@ -56,64 +56,22 @@ export class StatisticService {
     console.log('数据库中的 type 值:', testQuery.map(r => r.type));
     let startDate,endDate
     if(statType==='monthly'){
-      startDate = moment(formattedDate).startOf('month').format('YYYY-MM-DD HH:mm:ss');
-      endDate = moment(formattedDate).endOf('month').format('YYYY-MM-DD HH:mm:ss');
+      startDate = moment(formattedDate).startOf('month').format('YYYY-MM-DD');
+      endDate = moment(formattedDate).endOf('month').format('YYYY-MM-DD');
 
     }else if(statType==='daily'){
-      startDate = moment(formattedDate).startOf('day').format('YYYY-MM-DD HH:mm:ss');
-      endDate = moment(formattedDate).endOf('day').format('YYYY-MM-DD HH:mm:ss');
+      startDate = moment(formattedDate).startOf('day').format('YYYY-MM-DD');
+      endDate = moment(formattedDate).endOf('day').format('YYYY-MM-DD');
     }
 
-
-   
-    // 2. 先查询当天所有记录（不带任何条件）
-    const allDayRecords = await this.prisma.record.findMany({
-      where: {
-        recordTime: {
-          startsWith: formattedDate
-        }
-      },
-      include: {
-        tag: true,
-      },
-    });
-    console.log('2. 当天所有记录:', allDayRecords);
-
-    // 3. 查询未删除的记录
-    const unDeletedRecords = await this.prisma.record.findMany({
-      where: {
-        isDeleted: false,
-        recordTime: {
-          startsWith: formattedDate
-        }
-      },
-      include: {
-        tag: true,
-      },
-    });
-    console.log('3. 未删除的记录:', unDeletedRecords);
-
-    // 4. 按类型查询
-    const typeRecords = await this.prisma.record.findMany({
-      where: {
-        type:statType,
-        recordTime: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
-      include: {
-        tag: true,
-      },
-    });
-    console.log('4. 指定类型的记录:', typeRecords);
+    const datePrefix=statType === 'monthly'?moment(formattedDate).format('YYYY-MM'):formattedDate
    
     const records= await  this.prisma.record.findMany({
       where: {
-        // type:statType,
         recordTime: {
-          gte: startDate,
-          lte: endDate,
+          // gte: startDate,
+          // lte: endDate,
+          startsWith: datePrefix
         },
         isDeleted: false
       },
@@ -176,7 +134,7 @@ export class StatisticService {
 
     
     return {
-      message: `${type}统计已完成，统计日期：${date}`
+      message: `${statType}统计已完成，统计日期：${formattedDate}`
     };
 
   }

@@ -7,44 +7,31 @@ import { PrismaService } from '../prisma/prisma.service';
 @Injectable()
 export class RecordsService {
   constructor(private prisma: PrismaService) {}
-  // create(createRecordDto: CreateRecordDto) {
-  //   return 'This action adds a new record';
-  // }
+
 
   async create(createRecordDto: CreateRecordDto) {
-    return this.prisma.record.create({
-      data: {
-        ...createRecordDto,
+    const tag= await  this.prisma.tag.findUnique({
+      where: {
+        id: createRecordDto.tagId,
         isDeleted: false,
       },
-      select: {
-        id: true,
-      },
     });
+    console.log('tag',tag);
+    if(tag.type===createRecordDto.type&&tag.id===createRecordDto.tagId){
+      return await this.prisma.record.create({
+        data: {
+          ...createRecordDto,
+          isDeleted: false,
+        },
+        select: {
+          id: true,
+        },
+      });
+    }else {
+      throw new ConflictException('标签类型不匹配');
+    }
   }
 
-
-  // export class CreateRecordDto {
-  //   @Type(() => Number)
-  //   @IsInt()
-  //   @Min(1)
-  //   amount: number;
-  
-  //   @IsString()
-  //   tagId: string;
-  
-  //   @IsEnum(RecordType)
-  //   type: RecordType;
-                    
-  //   // @IsString()
-  //   // startDate: string;
-  
-  //   @IsString()
-  //   remark?: string;
-  
-  //   @IsString()
-  //   recordTime: string;
-  // }
 
 
 
