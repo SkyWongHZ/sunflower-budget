@@ -3,34 +3,42 @@ import { BullModule } from '@nestjs/bull';  // 使用官方的 @nestjs/bull
 import {  StatisticService } from './statistic.service';
 import { StatisticController } from './statistic.controller';
 import { PrismaService } from '../prisma/prisma.service';
+import { ConfigService ,ConfigModule} from '@nestjs/config';
+
 
 
 @Module({
   imports: [
-    BullModule.forRoot({
-      redis: {
-        host: '118.178.184.13',
-        port: 6379,
-        password: '密码',
-        maxRetriesPerRequest: 3,
-        connectTimeout: 15000,  // 15秒连接超时
-      },
-      defaultJobOptions: {
-        attempts: 3,  // 任务重试次数
-        backoff: {
-          type: 'exponential',
-          delay: 1000,
+    ConfigModule.forRoot(), 
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        redis: {
+          host:  '118.178.184.13',      // 从配置服务获取
+          port: 6379,
+          password: configService.get('REDIS_PASSWORD'),
+          maxRetriesPerRequest: 3,
+          connectTimeout: 15000,
         },
-        removeOnComplete: true,
-        removeOnFail: false,
-      },
+        defaultJobOptions: {
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 1000,
+          },
+          removeOnComplete: true,
+          removeOnFail: false,
+        },
+      })
+     
     }),
     BullModule.registerQueue({  
       name: 'statistic',  // 队列名称
     }),
   ],
   controllers: [StatisticController],
-  providers: [StatisticService, PrismaService],
+  providers: [StatisticService, PrismaService,StatisticController],
 })
 export class StatisticModule {}
 

@@ -157,21 +157,7 @@ export class StatisticService {
   // }
 
 
-  @Cron('* * * * *')  // 原来是 '0 1 * * *'
-  async scheduleDailyStatistic() {
-    try {
-      const yesterday = moment().subtract(1, 'day').format('YYYY-MM-DD');
-      console.log('触发定时任务，时间：', new Date());
-      await this.statisticQueue.add('daily-statistic', { 
-        type: 'daily',
-        date: yesterday 
-      });
-      console.log('添加任务到队列');
-    } catch (error) {
-      console.log('errorxxxx',error);
-    }
-   
-  }
+
 
   @Cron('0 2 1 * *')    // 每月1号凌晨2点
   async scheduleMonthlyStatistics(){
