@@ -25,7 +25,11 @@ export class StatisticController {
   // Bull 队列处理器
   @Process('daily-statistic')
   async handleDailystatistic(job: Job) {
-    return this.statisticService.trigger(job.data);
+    console.log('开始处理队列任务', job.id);
+    console.log('任务数据：', job.data);
+    const result= this.statisticService.trigger(job.data);
+    console.log('result: ', result);
+    return result;
   }
 
   @Process('monthly-statistic')

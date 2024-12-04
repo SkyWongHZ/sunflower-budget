@@ -113,7 +113,7 @@ export class StatisticService {
       tagStatObj[tagId].count += 1;
     });
 
-    await this.prisma.statistic.upsert({
+    await this.prisma.statistics.upsert({
       where: {
         type_date: {
           type: statType,
@@ -147,13 +147,30 @@ export class StatisticService {
   }
 
 
-  @Cron('0 1 * * *')    // 每天凌晨1点
-  async scheduleDailyStatistics(){
-    const yesterday = moment().subtract(1, 'day').format('YYYY-MM-DD');
-    await this.statisticQueue.add('daily-statistic', { 
-      type: 'daily',
-      date: yesterday 
-    });
+  // @Cron('0 1 * * *')    // 每天凌晨1点
+  // async scheduleDailyStatistics(){
+  //   const yesterday = moment().subtract(1, 'day').format('YYYY-MM-DD');
+  //   await this.statisticQueue.add('daily-statistic', { 
+  //     type: 'daily',
+  //     date: yesterday 
+  //   });
+  // }
+
+
+  @Cron('* * * * *')  // 原来是 '0 1 * * *'
+  async scheduleDailyStatistic() {
+    try {
+      const yesterday = moment().subtract(1, 'day').format('YYYY-MM-DD');
+      console.log('触发定时任务，时间：', new Date());
+      await this.statisticQueue.add('daily-statistic', { 
+        type: 'daily',
+        date: yesterday 
+      });
+      console.log('添加任务到队列');
+    } catch (error) {
+      console.log('errorxxxx',error);
+    }
+   
   }
 
   @Cron('0 2 1 * *')    // 每月1号凌晨2点
