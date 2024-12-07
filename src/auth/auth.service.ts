@@ -23,6 +23,7 @@ export class AuthService {
         id: true,
         email: true,
         username:true,
+        role:true,
       },
     });
 
@@ -32,16 +33,18 @@ export class AuthService {
           email: loginDto.email,
           username: `user_${Date.now()}`,
           password:'123456',
+          role:'NORMAL_USER',
         },
         select: {
           id: true,
           email: true,
           username:true,
+          role:true,
         },
       });
     }
 
-    const payload = { sub: user.id, email: user.email };
+    const payload = { sub: user.id, email: user.email ,role:user.role};
     const token = await this.jwtService.signAsync(payload);
     return {
       token,
