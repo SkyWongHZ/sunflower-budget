@@ -24,6 +24,7 @@ model User {
   updatedAt DateTime @updatedAt
   email     String  @unique
   role      Role @default(NORMAL_USER)
+ 
 
   @@map("users")
 }
@@ -41,6 +42,7 @@ model Tag {
   updatedAt DateTime @updatedAt
   deletedAt DateTime? 
   isDeleted Boolean   @default(false)
+  isPreset  Boolean  @default(false)   // 是否为预置标签
 
 
   @@map("tags")

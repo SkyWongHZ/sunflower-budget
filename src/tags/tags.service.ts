@@ -19,6 +19,29 @@ export class TagsService {
     return this.prisma.tag.create({
       data: {
         isDeleted: false,
+        isPreset: false,
+        ...createTagDto,
+      },
+      select: {
+        id: true,
+      },
+    });
+  }
+
+  async createPreset(createTagDto: CreateTagDto) {
+    const exitTag = await this.prisma.tag.findFirst({
+      where: {
+        name: createTagDto.name,
+        isDeleted: false,
+      },
+    });
+    if (exitTag) {
+      throw new ConflictException('标签名已存在');
+    }
+    return this.prisma.tag.create({
+      data: {
+        isDeleted: false,
+        isPreset:true,
         ...createTagDto,
       },
       select: {

@@ -50,24 +50,18 @@ export class TagsController {
 
 
 
-  // @Post()
-  // @Roles(ROLES.NORMAL_USER,ROLES.FINANCIAL_ADMIN,ROLES.SUPER_ADMIN)
-  // create(@Body() createTagDto: CreateTagDto, ) {
-  //   return this.tagsService.create(createTagDto);
-  // } 
+  @Post('preset')
+  @Roles(ROLES.FINANCIAL_ADMIN,ROLES.SUPER_ADMIN)
+  presetCreate(@Body() createTagDto: CreateTagDto, ) {
+    return this.tagsService.create(createTagDto);
+  } 
 
-  // @Get()
-  // findAll(@Query() query: QueryTagDto) {
-  //   return this.tagsService.findAll({
-  //     ...query,
-  //   });
-  // }
-  // @Put(':id')
+  // @Put('preset')
   // update(@Param('id') id: string, @Body() updateTagDto: UpdateTagDto) {
   //   return this.tagsService.update(id, updateTagDto);
   // }
 
-  // @Delete(':id')
+  // @Delete('preset')
   // remove(@Param('id') id: string, ) {
   //   return this.tagsService.remove(id);
   // }
