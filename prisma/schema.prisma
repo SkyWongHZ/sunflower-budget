@@ -42,7 +42,6 @@ model Tag {
   updatedAt DateTime @updatedAt
   deletedAt DateTime? 
   isDeleted Boolean   @default(false)
-  isPreset  Boolean  @default(false)   // 是否为预置标签
 
 
   @@map("tags")

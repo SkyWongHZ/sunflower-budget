@@ -14,11 +14,6 @@ enum  TagType{
 }
 
 
-enum Role {
-  SUPER_ADMIN='SUPER_ADMIN',
-  FINANCE_ADMIN='FINANCE_ADMIN',
-  NORMAL_USER='NORMAL_USER',
-}
 
 export class CreateTagDto {
   @IsString()
@@ -30,6 +25,4 @@ export class CreateTagDto {
   @IsEnum(TagType)
   type: TagType;
 
-  @IsEnum(Role)
-  role: Role;
 }

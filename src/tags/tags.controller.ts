@@ -27,14 +27,15 @@ export class TagsController {
   constructor(private readonly tagsService: TagsService) {}
 
   @Post()
-  create(@Body() createTagDto: CreateTagDto, ) {
-    return this.tagsService.create(createTagDto);
+  create(@Body() createTagDto: CreateTagDto, @Request() req:any) {
+    return this.tagsService.create(createTagDto,req.user.id);
   } 
 
   @Get()
-  findAll(@Query() query: QueryTagDto) {
+  findAll(@Query() query: QueryTagDto,@Request() req:any) {
     return this.tagsService.findAll({
       ...query,
+      userId: req.user.id,
     });
   }
   @Put(':id')
@@ -52,17 +53,19 @@ export class TagsController {
 
   @Post('preset')
   @Roles(ROLES.FINANCIAL_ADMIN,ROLES.SUPER_ADMIN)
-  presetCreate(@Body() createTagDto: CreateTagDto, ) {
-    return this.tagsService.create(createTagDto);
+  createPreset(@Body() createTagDto: CreateTagDto, ) {
+    return this.tagsService.createPreset(createTagDto);
   } 
 
-  // @Put('preset')
-  // update(@Param('id') id: string, @Body() updateTagDto: UpdateTagDto) {
-  //   return this.tagsService.update(id, updateTagDto);
-  // }
+  @Put('preset/:id')
+  @Roles(ROLES.FINANCIAL_ADMIN,ROLES.SUPER_ADMIN)
+  updatePreset(@Param('id') id: string, @Body() updateTagDto: UpdateTagDto) {
+    return this.tagsService.updatePreset(id, updateTagDto);
+  }
 
-  // @Delete('preset')
-  // remove(@Param('id') id: string, ) {
-  //   return this.tagsService.remove(id);
-  // }
+  @Delete('preset/:id')
+  @Roles(ROLES.SUPER_ADMIN)
+  removePreset(@Param('id') id: string, ) {
+    return this.tagsService.removePreset(id);
+  }
 }

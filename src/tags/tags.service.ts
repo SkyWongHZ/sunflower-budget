@@ -6,7 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 @Injectable()
 export class TagsService {
   constructor(private prisma: PrismaService) {}
-  async create(createTagDto: CreateTagDto) {
+  async create(createTagDto: CreateTagDto,userId:string) {
     const exitTag = await this.prisma.tag.findFirst({
       where: {
         name: createTagDto.name,
@@ -19,8 +19,9 @@ export class TagsService {
     return this.prisma.tag.create({
       data: {
         isDeleted: false,
-        isPreset: false,
+        tagType: 'custom',
         ...createTagDto,
+        userId,
       },
       select: {
         id: true,
@@ -41,7 +42,7 @@ export class TagsService {
     return this.prisma.tag.create({
       data: {
         isDeleted: false,
-        isPreset:true,
+        tagType: 'preset',
         ...createTagDto,
       },
       select: {
@@ -54,9 +55,11 @@ export class TagsService {
     type?: 'income' | 'expense';
     pageIndex: number;
     pageSize: number;
+    userId?:string;
   }) {
-    const { type, pageIndex, pageSize } = params;
+    const { type, pageIndex, pageSize ,userId} = params;
     const skip = (pageIndex - 1) * pageSize;
+    console.log('userId:', userId);
     const [tags, total] = await Promise.all([
       this.prisma.tag.findMany({
         skip,
@@ -64,6 +67,10 @@ export class TagsService {
         where: {
           isDeleted: false,
           ...(type && { type }),
+          OR: [
+            { tagType: 'preset' },  // 预设标签所有人可见
+            { userId, tagType: 'custom' }  // 自定义标签只看自己的
+          ]
         },
         select: {
           id: true,
@@ -109,6 +116,30 @@ export class TagsService {
     });
   }
 
+  async updatePreset(id: string, updateTagDto: UpdateTagDto) {
+    const exitTag = await this.prisma.tag.findFirst({
+      where: {
+        name: updateTagDto.name,
+        isDeleted: false,
+        id: { not: id },
+      },
+    });
+    if (exitTag) {
+      throw new ConflictException('标签名已存在');
+    }
+    return await this.prisma.tag.update({
+      where: {
+        id,
+        isDeleted: false,
+        tagType: 'preset',
+      },
+      data: updateTagDto,
+      select: {
+        id: true,
+      },
+    });
+  }
+
   async remove(id: string) {
     return await this.prisma.$transaction([
       this.prisma.record.updateMany({
@@ -125,6 +156,36 @@ export class TagsService {
         where: {
           id,
           isDeleted: false,
+        },
+        data: {
+          isDeleted: true,
+          deletedAt: new Date(),
+        },
+        select: {
+          id: true,
+        },
+      }),
+    ]);
+  }
+
+
+  async removePreset(id: string) {
+    return await this.prisma.$transaction([
+      this.prisma.record.updateMany({
+        where: {
+          tagId: id,
+          isDeleted: false,
+        },
+        data: {
+          isDeleted: true,
+          deletedAt: new Date(),
+        },
+      }),
+      this.prisma.tag.update({
+        where: {
+          id,
+          isDeleted: false,
+          tagType:'preset',
         },
         data: {
           isDeleted: true,
