@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete ,Query} from '@nestjs/common';
+import { Controller, Get, Post, Body, Query} from '@nestjs/common';
 import { StatisticService } from './statistic.service';
 import { StatisticDto } from './dto/statistic.dto';
 import { Process, Processor } from '@nestjs/bull';
