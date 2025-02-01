@@ -15,74 +15,122 @@ enum Role {
 }
 
 model User {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  username  String?   
-  password  String
-  tags      Tag[]    // 关联
-  records   Record[] // 关联
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  email     String  @unique
-  role      Role @default(NORMAL_USER)
- 
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  username      String?
+  password      String
+  tags          Tag[] // 关联
+  records       Record[] // 关联
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  email         String         @unique
+  role          Role           @default(NORMAL_USER)
+  budgets       Budget[]
+  tagBudgets    TagBudget[]
+  notifications Notification[]
 
   @@map("users")
 }
 
 model Tag {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id        String      @id @default(auto()) @map("_id") @db.ObjectId
   name      String
   icon      String
-  type      String   @default("expense") // 'income' | 'expense'
-  tagType   String   @default("custom") // 'custom' | 'preset'
-  userId    String?   @db.ObjectId
-  user      User?     @relation(fields: [userId], references: [id])
+  type      String      @default("expense") // 'income' | 'expense'
+  tagType   String      @default("custom") // 'custom' | 'preset'
+  userId    String?     @db.ObjectId
+  user      User?       @relation(fields: [userId], references: [id])
   records   Record[] // 关联
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  deletedAt DateTime? 
-  isDeleted Boolean   @default(false)
-
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  deletedAt DateTime?
+  isDeleted Boolean     @default(false)
+  TagBudget TagBudget[]
 
   @@map("tags")
 }
 
 model Record {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
   amount     Float
-  type       String   @default("expense") // 'income' | 'expense'
+  type       String    @default("expense") // 'income' | 'expense'
   remark     String?
   recordTime String
   userId     String?   @db.ObjectId
   user       User?     @relation(fields: [userId], references: [id])
-  tagId      String   @db.ObjectId
-  tag        Tag      @relation(fields: [tagId], references: [id])
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  deletedAt DateTime? 
-  isDeleted Boolean   @default(false)
+  tagId      String    @db.ObjectId
+  tag        Tag       @relation(fields: [tagId], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+  isDeleted  Boolean   @default(false)
 
   @@map("records")
 }
 
-
 model Statistics {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  type        String    // daily(日统计) 或 monthly(月统计)
-  date        String  // 统计日期
-  totalAmount Float     // 总金额
-  totalCount  Int      // 总笔数
-  income      Float    // 收入金额
-  expense     Float    // 支出金额
-  tagStats    Json?    // 标签统计，使用 JSON 存储
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  type        String // daily(日统计) 或 monthly(月统计)
+  date        String // 统计日期
+  totalAmount Float // 总金额
+  totalCount  Int // 总笔数
+  income      Float // 收入金额
+  expense     Float // 支出金额
+  tagStats    Json? // 标签统计，使用 JSON 存储
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  
-  @@unique([type, date],name:"type_date")// 创建复合索引提高查询性能
+  @@unique([type, date], name: "type_date") // 创建复合索引提高查询性能
   @@map("statistics")
 }
 
+// 月度总预算
+model Budget {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String    @db.ObjectId
+  user      User      @relation(fields: [userId], references: [id])
+  amount    Float // 预算金额
+  year      Int // 年份
+  month     Int // 月份
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  isDeleted Boolean   @default(false)
 
+  @@unique([userId, year, month], name: "user_year_month")
+  @@map("budgets")
+}
 
+// 标签预算（按支出分类的预算）
+model TagBudget {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String    @db.ObjectId
+  user      User      @relation(fields: [userId], references: [id])
+  tagId     String    @db.ObjectId
+  tag       Tag       @relation(fields: [tagId], references: [id])
+  amount    Float // 预算金额
+  year      Int // 年份
+  month     Int // 月份
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  isDeleted Boolean   @default(false)
 
+  @@unique([userId, tagId, year, month], name: "user_tag_year_month")
+  @@map("tag_budgets")
+}
+
+// 通知记录
+model Notification {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  type      String // MONTHLY_BUDGET（月度预算提醒）或 TAG_BUDGET（标签预算提醒）
+  message   String // 通知内容
+  level     String // HIGH（超90%）, MEDIUM（超80%）, LOW（超70%）
+  data      Json // 额外数据，如预算使用百分比、剩余金额等
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("notifications")
+}
