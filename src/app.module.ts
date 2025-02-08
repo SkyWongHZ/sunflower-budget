@@ -11,6 +11,9 @@ import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
 import { TasksModule } from './tasks/tasks.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { StatisticModule } from './statistic/statistic.module';
+import { BudgetsModule } from './budgets/budgets.module';
+import { TagBudgetsModule } from './tag-budgets/tag-budgets.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -24,6 +27,9 @@ import { StatisticModule } from './statistic/statistic.module';
     RabbitmqModule,
     TasksModule,
     StatisticModule,
+    BudgetsModule,
+    TagBudgetsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
