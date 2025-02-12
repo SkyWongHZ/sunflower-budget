@@ -65,4 +65,72 @@ export class BudgetsService {
       remainingAmount: budget.amount - spentAmount,
     };
   }
+
+  // 检查预算并创建通知
+  async checkBudgetAndNotify(userId: string, year: number, month: number) {
+    const usage = await this.getBudgetUsage(userId, year, month);
+    if (!usage) return null;
+
+    const { spentPercentage } = usage;
+    let notificationLevel: 'HIGH' | 'MEDIUM' | 'LOW' = null;
+    let message = '';
+
+    // 根据使用比例设置通知级别和消息
+    if (spentPercentage >= 90) {
+      notificationLevel = 'HIGH';
+      message = `您的月度预算已使用 ${spentPercentage.toFixed(1)}%，即将超出预算！`;
+    } else if (spentPercentage >= 80) {
+      notificationLevel = 'MEDIUM';
+      message = `您的月度预算已使用 ${spentPercentage.toFixed(1)}%，请注意控制支出。`;
+    } else if (spentPercentage >= 70) {
+      notificationLevel = 'LOW';
+      message = `您的月度预算已使用 ${spentPercentage.toFixed(1)}%。`;
+    }
+
+    // 只在需要发送通知时处理
+    if (notificationLevel) {
+      // 检查是否已存在相同级别的通知
+      const existingNotification = await this.prisma.notification.findFirst({
+        where: {
+          userId,
+          type: 'MONTHLY_BUDGET',
+          level: notificationLevel,
+          data: {
+            path: ['year'],
+            equals: year
+          },
+          AND: {
+            data: {
+              path: ['month'],
+              equals: month
+            }
+          }
+        }
+      });
+
+      // 如果没有发送过该级别的通知，创建新通知
+      if (!existingNotification) {
+        await this.prisma.notification.create({
+          data: {
+            userId,
+            type: 'MONTHLY_BUDGET',
+            message,
+            level: notificationLevel,
+            data: {
+              year,
+              month,
+              budgetAmount: usage.budget.amount,
+              spentAmount: usage.spentAmount,
+              spentPercentage,
+              remainingAmount: usage.remainingAmount
+            },
+          },
+        });
+      }
+    }
+
+    return usage;
+  }
+
+
 }
