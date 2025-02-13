@@ -34,26 +34,33 @@ export class BudgetsService {
     if (!budget) return null;
 
     // 格式化日期范围为字符串
-    const startDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
-    const endDate = new Date(year, month, 1).toISOString().split('T')[0];
+    const startDate = new Date(Date.UTC(year, month - 1, 1));  // 月初
+    const endDate = new Date(Date.UTC(year, month, 0));      // 月末
+
+
+    console.log('查询日期范围:', {
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString()
+  });
 
     // 计算当月支出
     const totalExpense = await this.prisma.record.aggregate({
-      where: {
-        userId,
-        type: 'expense',
-        recordTime: {
-          gte: startDate,
-          lt: endDate,
+        where: {
+            userId,
+            type: 'expense',
+            recordTime: {
+                gte: startDate.toISOString(),
+                lte: endDate.toISOString(),
+            },
+            isDeleted: false,
         },
-        isDeleted: false,
-      },
-      _sum: {
-        amount: true,
-      },
+        _sum: {
+            amount: true,
+        },
     });
 
     const spentAmount = totalExpense._sum.amount || 0;
+    console.log('找到的记录:', spentAmount);
 
 
     
@@ -96,15 +103,12 @@ export class BudgetsService {
           type: 'MONTHLY_BUDGET',
           level: notificationLevel,
           data: {
-            path: ['year'],
-            equals: year
-          },
-          AND: {
-            data: {
-              path: ['month'],
-              equals: month
+            // 修改这里的 Json 查询方式
+            equals: {
+              year,
+              month,
             }
-          }
+          },
         }
       });
 
