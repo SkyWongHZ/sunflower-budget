@@ -1,34 +1,64 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { 
+  Controller, 
+  Get, 
+  Post,
+  Patch, 
+  Delete,
+  Param, 
+  Body, 
+  UseGuards,
+  Query 
+} from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
-import { UpdateNotificationDto } from './dto/update-notification.dto';
+import { AuthGuard } from '../auth/auth.guard';
+import { User } from '../common/decorators/user.decorator';
 
+@UseGuards(AuthGuard)
 @Controller('notifications')
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Post()
-  create(@Body() createNotificationDto: CreateNotificationDto) {
+  create(
+    @User('id') userId: string,
+    @Body() createNotificationDto: CreateNotificationDto
+  ) {
+    createNotificationDto.userId = userId;
     return this.notificationsService.create(createNotificationDto);
   }
 
   @Get()
-  findAll() {
-    return this.notificationsService.findAll();
+  findAll(@User('id') userId: string) {
+    return this.notificationsService.findAll(userId);
+  }
+
+  @Get('unread/count')
+  getUnreadCount(@User('id') userId: string) {
+    return this.notificationsService.getUnreadCount(userId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.notificationsService.findOne(+id);
+  findOne(
+    @Param('id') id: string,
+    @User('id') userId: string
+  ) {
+    return this.notificationsService.findOne(id, userId);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateNotificationDto: UpdateNotificationDto) {
-    return this.notificationsService.update(+id, updateNotificationDto);
+  @Patch(':id/read')
+  markAsRead(
+    @Param('id') id: string,
+    @User('id') userId: string
+  ) {
+    return this.notificationsService.markAsRead(id, userId);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.notificationsService.remove(+id);
+  @Delete('cleanup')
+  removeOldNotifications(
+    @User('id') userId: string,
+    @Query('days') days?: number
+  ) {
+    return this.notificationsService.removeOldNotifications(userId, days);
   }
 }

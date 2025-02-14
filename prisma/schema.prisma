@@ -86,8 +86,8 @@ model Statistics {
 // 月度总预算
 model Budget {
   id        String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String    @db.ObjectId
-  user      User      @relation(fields: [userId], references: [id])
+  userId    String?    @db.ObjectId
+  user      User?      @relation(fields: [userId], references: [id])
   amount    Float // 预算金额
   year      Int // 年份
   month     Int // 月份
@@ -96,15 +96,15 @@ model Budget {
   deletedAt DateTime?
   isDeleted Boolean   @default(false)
 
-  @@unique([userId, year, month], name: "user_year_month")
+  @@unique([ year, month], name: "year_month")
   @@map("budgets")
 }
 
 // 标签预算（按支出分类的预算）
 model TagBudget {
   id        String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String    @db.ObjectId
-  user      User      @relation(fields: [userId], references: [id])
+  userId    String?    @db.ObjectId
+  user      User?      @relation(fields: [userId], references: [id])
   tagId     String    @db.ObjectId
   tag       Tag       @relation(fields: [tagId], references: [id])
   amount    Float // 预算金额
@@ -115,15 +115,15 @@ model TagBudget {
   deletedAt DateTime?
   isDeleted Boolean   @default(false)
 
-  @@unique([userId, tagId, year, month], name: "user_tag_year_month")
+  @@unique([ tagId, year, month], name: "tag_year_month")
   @@map("tag_budgets")
 }
 
 // 通知记录
 model Notification {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   @db.ObjectId
-  user      User     @relation(fields: [userId], references: [id])
+  userId    String?   @db.ObjectId
+  user      User?     @relation(fields: [userId], references: [id])
   type      String // MONTHLY_BUDGET（月度预算提醒）或 TAG_BUDGET（标签预算提醒）
   message   String // 通知内容
   level     String // HIGH（超90%）, MEDIUM（超80%）, LOW（超70%）
