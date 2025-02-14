@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBudgetDto } from './dto/create-budget.dto';
+import { WebhookService } from '../webhook/webhook.service';
 
 @Injectable()
 export class BudgetsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private webhookService: WebhookService,
+  ) {}
 
   // 创建预算
   async create(userId: string, createBudgetDto: CreateBudgetDto) {
@@ -33,24 +37,27 @@ export class BudgetsService {
     const budget = await this.findOne(userId, year, month);
     if (!budget) return null;
 
-    // 格式化日期范围为字符串
-    const startDate = new Date(Date.UTC(year, month - 1, 1));  // 月初
-    const endDate = new Date(Date.UTC(year, month, 0));      // 月末
+    // // 格式化日期范围为字符串
+    // const startDate = new Date(Date.UTC(year, month - 1, 1));  // 月初
+    // const endDate = new Date(Date.UTC(year, month, 0));      // 月末
 
 
-    console.log('查询日期范围:', {
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString()
-  });
+    // 构建日期前缀匹配
+    const datePrefix = `${year}-${month.toString().padStart(2, '0')}`;
+
+
+  //   console.log('查询日期范围:', {
+  //     startDate: startDate.toISOString(),
+  //     endDate: endDate.toISOString()
+  // });
 
     // 计算当月支出
     const totalExpense = await this.prisma.record.aggregate({
         where: {
-            userId,
+            // userId,
             type: 'expense',
             recordTime: {
-                gte: startDate.toISOString(),
-                lte: endDate.toISOString(),
+              startsWith: datePrefix // 使用字符串前缀匹配
             },
             isDeleted: false,
         },
@@ -59,9 +66,19 @@ export class BudgetsService {
         },
     });
 
+    console.log('查询条件:', {
+      // userId,
+      type: 'expense',
+      recordTime: {
+          startsWith: datePrefix
+      },
+      isDeleted: false
+  });
+
     const spentAmount = totalExpense._sum.amount || 0;
     console.log('找到的记录:', spentAmount);
 
+    console.log('totalExpense', totalExpense);
 
     
 
@@ -130,6 +147,14 @@ export class BudgetsService {
             },
           },
         });
+
+         // 发送企业微信通知
+         const webhookMessage = this.webhookService.formatBudgetMessage(
+          usage.budget,
+          usage.spentAmount,
+          spentPercentage
+        );
+        await this.webhookService.sendWorkWeixinMessage(webhookMessage);
       }
     }
 

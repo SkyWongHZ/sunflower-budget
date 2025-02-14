@@ -14,6 +14,7 @@ import { StatisticModule } from './statistic/statistic.module';
 import { BudgetsModule } from './budgets/budgets.module';
 import { TagBudgetsModule } from './tag-budgets/tag-budgets.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { WorkWeixinWebhookModule } from './webhook/webhook.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     BudgetsModule,
     TagBudgetsModule,
     NotificationsModule,
+    WorkWeixinWebhookModule,
   ],
   controllers: [AppController],
   providers: [AppService],
