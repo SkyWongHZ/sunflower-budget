@@ -25,11 +25,17 @@ export class CreateRecordDto {
 
   @IsEnum(RecordType)
   type: RecordType;
-                  
-  // @IsString()
-  // startDate: string;
 
   @IsString()
+  @IsOptional()
+  emoji?: string;
+
+  @IsString()
+  @IsOptional()
+  imageUrl?: string;
+
+  @IsString()
+  @IsOptional()
   remark?: string;
 
   @IsString()

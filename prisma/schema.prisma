@@ -54,6 +54,8 @@ model Record {
   amount     Float
   type       String    @default("expense") // 'income' | 'expense'
   remark     String?
+  emoji      String?   // 可选的 emoji 表情
+  imageUrl   String?   // 可选的图片 URL
   recordTime String
   userId     String?   @db.ObjectId
   user       User?     @relation(fields: [userId], references: [id])
