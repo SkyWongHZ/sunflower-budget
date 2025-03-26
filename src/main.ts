@@ -6,12 +6,17 @@ import {
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import multipart from '@fastify/multipart';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter(),
   );
+  
+  // 注册 multipart 支持
+  await app.register(multipart);
+
   // 设置全局路由前缀
   app.setGlobalPrefix('api');
 
@@ -30,6 +35,6 @@ async function bootstrap() {
   // 注册全局响应拦截器
   app.useGlobalInterceptors(new TransformInterceptor());
 
-  await app.listen(3000);
+  await app.listen(3000, '0.0.0.0');
 }
 bootstrap();

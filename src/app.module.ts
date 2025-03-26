@@ -15,9 +15,12 @@ import { BudgetsModule } from './budgets/budgets.module';
 import { TagBudgetsModule } from './tag-budgets/tag-budgets.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { WorkWeixinWebhookModule } from './webhook/webhook.module';
+import { MinioModule } from './minio/minio.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot(),
     ScheduleModule.forRoot(),
     UsersModule,
     LoggerModule,
@@ -32,6 +35,7 @@ import { WorkWeixinWebhookModule } from './webhook/webhook.module';
     TagBudgetsModule,
     NotificationsModule,
     WorkWeixinWebhookModule,
+    MinioModule,
   ],
   controllers: [AppController],
   providers: [AppService],
