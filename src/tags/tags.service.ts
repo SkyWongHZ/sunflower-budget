@@ -6,7 +6,8 @@ import { PrismaService } from '../prisma/prisma.service';
 @Injectable()
 export class TagsService {
   constructor(private prisma: PrismaService) {}
-  async create(createTagDto: CreateTagDto,userId:string) {
+  
+  async create(createTagDto: CreateTagDto) {
     const exitTag = await this.prisma.tag.findFirst({
       where: {
         name: createTagDto.name,
@@ -16,13 +17,15 @@ export class TagsService {
     if (exitTag) {
       throw new ConflictException('标签名已存在');
     }
+    const tagData = {
+      ...createTagDto,
+      icon: createTagDto.icon || 'default-icon',
+      isDeleted: false,
+      tagType: 'custom',
+    };
+    
     return this.prisma.tag.create({
-      data: {
-        isDeleted: false,
-        tagType: 'custom',
-        ...createTagDto,
-        userId,
-      },
+      data: tagData,
       select: {
         id: true,
       },
@@ -39,12 +42,15 @@ export class TagsService {
     if (exitTag) {
       throw new ConflictException('标签名已存在');
     }
+    const tagData = {
+      ...createTagDto,
+      icon: createTagDto.icon || 'default-icon',
+      isDeleted: false,
+      tagType: 'preset',
+    };
+    
     return this.prisma.tag.create({
-      data: {
-        isDeleted: false,
-        tagType: 'preset',
-        ...createTagDto,
-      },
+      data: tagData,
       select: {
         id: true,
       },
@@ -55,11 +61,10 @@ export class TagsService {
     type?: 'income' | 'expense';
     pageIndex: number;
     pageSize: number;
-    userId?:string;
   }) {
-    const { type, pageIndex, pageSize ,userId} = params;
+    const { type, pageIndex, pageSize } = params;
     const skip = (pageIndex - 1) * pageSize;
-    console.log('userId:', userId);
+    
     const [tags, total] = await Promise.all([
       this.prisma.tag.findMany({
         skip,
@@ -67,16 +72,13 @@ export class TagsService {
         where: {
           isDeleted: false,
           ...(type && { type }),
-          OR: [
-            { tagType: 'preset' },  // 预设标签所有人可见
-            { userId, tagType: 'custom' }  // 自定义标签只看自己的
-          ]
         },
         select: {
           id: true,
           name: true,
           icon: true,
           type: true,
+          tagType: true,
         },
       }),
       this.prisma.tag.count({
@@ -167,7 +169,6 @@ export class TagsService {
       }),
     ]);
   }
-
 
   async removePreset(id: string) {
     return await this.prisma.$transaction([

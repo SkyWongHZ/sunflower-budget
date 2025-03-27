@@ -8,21 +8,19 @@ import {
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
-enum  TagType{
-    INCOME='income',
-    EXPENSE='expense'
+enum TagType {
+  INCOME = 'income',
+  EXPENSE = 'expense'
 }
-
-
 
 export class CreateTagDto {
   @IsString()
   name: string;
 
   @IsString()
-  icon: string;
+  @IsOptional()
+  icon?: string;
 
   @IsEnum(TagType)
   type: TagType;
-
 }
