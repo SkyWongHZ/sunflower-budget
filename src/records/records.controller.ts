@@ -22,7 +22,7 @@ export class RecordsController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.recordsService.findOne(+id);
+    return this.recordsService.findOne(id);
   }
 
   @Put(':id')

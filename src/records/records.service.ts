@@ -1,4 +1,4 @@
-import { Injectable ,ConflictException} from '@nestjs/common';
+import { Injectable ,ConflictException, NotFoundException} from '@nestjs/common';
 import { CreateRecordDto } from './dto/create-record.dto';
 import { UpdateRecordDto } from './dto/update-record.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -16,7 +16,11 @@ export class RecordsService {
       },
     });
     console.log('tag',tag);
-  
+    
+    if (!tag) {
+      throw new ConflictException('标签不存在或已被删除');
+    }
+    
     if(tag.type===createRecordDto.type&&tag.id===createRecordDto.tagId){
       return await this.prisma.record.create({
         data: {
@@ -25,6 +29,12 @@ export class RecordsService {
         },
         select: {
           id: true,
+          emoji: true,
+          imageUrl: true,
+          amount: true,
+          type: true,
+          recordTime: true,
+          remark: true,
         },
       });
     }else {
@@ -69,7 +79,9 @@ export class RecordsService {
           recordTime: true,
           remark: true,
           type: true,
-          amount:true,
+          amount: true,
+          emoji: true,
+          imageUrl: true,
           tag:{
             select:{
               id:true,
@@ -100,8 +112,35 @@ export class RecordsService {
   }
 
 
-  findOne(id: number) {
-    return `This action returns a #${id} record`;
+  async findOne(id: string) {
+    const record = await this.prisma.record.findUnique({
+      where: {
+        id,
+        isDeleted: false,
+      },
+      select: {
+        id: true,
+        recordTime: true,
+        remark: true,
+        type: true,
+        amount: true,
+        emoji: true,
+        imageUrl: true,
+        tag: {
+          select: {
+            id: true,
+            name: true,
+            icon: true,
+          }
+        },
+      },
+    });
+
+    if (!record) {
+      throw new NotFoundException(`记录ID: ${id} 不存在`);
+    }
+
+    return record;
   }
 
   // update(id: number, updateRecordDto: UpdateRecordDto) {
@@ -109,6 +148,17 @@ export class RecordsService {
   // }
 
   async update(id: string, updateRecordDto: UpdateRecordDto) {
+    const record = await this.prisma.record.findUnique({
+      where: {
+        id,
+        isDeleted: false,
+      },
+    });
+
+    if (!record) {
+      throw new NotFoundException(`记录ID: ${id} 不存在`);
+    }
+
     return await this.prisma.record.update({
       where: {
         id,
@@ -117,6 +167,12 @@ export class RecordsService {
       data: updateRecordDto,
       select: {
         id: true,
+        recordTime: true,
+        remark: true,
+        type: true,
+        amount: true,
+        emoji: true,
+        imageUrl: true,
       },
     });
   }
@@ -127,6 +183,17 @@ export class RecordsService {
   // }
 
   async remove(id: string) {
+    const record = await this.prisma.record.findUnique({
+      where: {
+        id,
+        isDeleted: false,
+      },
+    });
+
+    if (!record) {
+      throw new NotFoundException(`记录ID: ${id} 不存在`);
+    }
+
     return await this.prisma.record.update({
       where: {
         id,
