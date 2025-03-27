@@ -16,6 +16,7 @@ export class RecordsService {
       },
     });
     console.log('tag',tag);
+  
     if(tag.type===createRecordDto.type&&tag.id===createRecordDto.tagId){
       return await this.prisma.record.create({
         data: {
@@ -44,17 +45,20 @@ export class RecordsService {
   }) {
     const { tagId,type, pageIndex, pageSize,startDate,endDate } = params;
     const skip = (pageIndex - 1) * pageSize;
-    const  where= {
+    const where = {
       isDeleted: false,
-      ...(tagId&&{tagId}) ,
+      ...(tagId && { tagId }),
       ...(type && { type }),
-      ...(startDate&&{ recordTime:{
-        gte:startDate
-      }}),
-      ...(endDate&&{recordTime:{
-        lte:endDate
-      }}),
-    }
+      ...(startDate || endDate) && {
+        recordTime: {
+          ...(startDate && { gte: startDate }),
+          ...(endDate && { lte: endDate })
+        }
+      },
+      tag: {
+        isDeleted: false // 确保关联的tag存在且未被删除
+      }
+    };
     const [records, total] = await Promise.all([
       this.prisma.record.findMany({
         skip,
