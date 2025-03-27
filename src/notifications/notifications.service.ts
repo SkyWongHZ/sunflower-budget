@@ -6,6 +6,10 @@ import { CreateNotificationDto } from './dto/create-notification.dto';
 export class NotificationsService {
   constructor(private prisma: PrismaService) {}
 
+  /**
+   * 创建通知 - 仅供内部系统使用，不暴露为API
+   * 主要被预算模块调用，用于在预算使用达到特定阈值时自动创建通知
+   */
   async create(createNotificationDto: CreateNotificationDto) {
     return this.prisma.notification.create({
       data: createNotificationDto,
@@ -16,45 +20,6 @@ export class NotificationsService {
     return this.prisma.notification.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
-    });
-  }
-
-  async findOne(id: string, userId: string) {
-    return this.prisma.notification.findFirst({
-      where: { 
-        id,
-        userId,
-      },
-    });
-  }
-
-  async markAsRead(id: string, userId: string) {
-    return this.prisma.notification.update({
-      where: { id, userId },
-      data: { isRead: true },
-    });
-  }
-
-  async getUnreadCount(userId: string) {
-    return this.prisma.notification.count({
-      where: {
-        userId,
-        isRead: false,
-      },
-    });
-  }
-
-  async removeOldNotifications(userId: string, days: number = 30) {
-    const date = new Date();
-    date.setDate(date.getDate() - days);
-
-    return this.prisma.notification.deleteMany({
-      where: {
-        userId,
-        createdAt: {
-          lt: date,
-        },
-      },
     });
   }
 }

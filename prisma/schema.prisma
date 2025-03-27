@@ -25,7 +25,6 @@ model User {
   email         String         @unique
   role          Role           @default(NORMAL_USER)
   budgets       Budget[]
-  tagBudgets    TagBudget[]
   notifications Notification[]
 
   @@map("users")
@@ -44,7 +43,6 @@ model Tag {
   updatedAt DateTime    @updatedAt
   deletedAt DateTime?
   isDeleted Boolean     @default(false)
-  TagBudget TagBudget[]
 
   @@map("tags")
 }
@@ -100,25 +98,6 @@ model Budget {
 
   @@unique([ year, month], name: "year_month")
   @@map("budgets")
-}
-
-// 标签预算（按支出分类的预算）
-model TagBudget {
-  id        String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String?    @db.ObjectId
-  user      User?      @relation(fields: [userId], references: [id])
-  tagId     String    @db.ObjectId
-  tag       Tag       @relation(fields: [tagId], references: [id])
-  amount    Float // 预算金额
-  year      Int // 年份
-  month     Int // 月份
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-  isDeleted Boolean   @default(false)
-
-  @@unique([ tagId, year, month], name: "tag_year_month")
-  @@map("tag_budgets")
 }
 
 // 通知记录

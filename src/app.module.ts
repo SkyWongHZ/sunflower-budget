@@ -12,7 +12,6 @@ import { TasksModule } from './tasks/tasks.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { StatisticModule } from './statistic/statistic.module';
 import { BudgetsModule } from './budgets/budgets.module';
-import { TagBudgetsModule } from './tag-budgets/tag-budgets.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { WorkWeixinWebhookModule } from './webhook/webhook.module';
 import { MinioModule } from './minio/minio.module';
@@ -32,7 +31,6 @@ import { ConfigModule } from '@nestjs/config';
     TasksModule,
     StatisticModule,
     BudgetsModule,
-    TagBudgetsModule,
     NotificationsModule,
     WorkWeixinWebhookModule,
     MinioModule,
