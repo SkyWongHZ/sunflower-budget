@@ -15,10 +15,26 @@ export class StatisticService {
 
   async getStatistic(params): Promise<StatisticData | null> {
     const { type, date } = params;
-    const data = await this.prisma.statistics.findFirst({
+    
+    console.log('查询统计请求参数:', { type, date });
+    
+    // 处理日期参数，特别是针对月度统计
+    let queryDate = date;
+    if (type === 'monthly' && date && date.length <= 7) {
+      // 对于月度统计，如果日期格式为 YYYY-MM，添加日期部分
+      queryDate = moment(date + '-01').format('YYYY-MM-DD');
+    } else if (date) {
+      // 确保日期格式一致
+      queryDate = moment(date).format('YYYY-MM-DD');
+    }
+    
+    console.log('处理后的查询参数:', { type, originalDate: date, queryDate });
+    
+    // 先尝试直接查询
+    let data = await this.prisma.statistics.findFirst({
       where: {
         ...(type && { type }),
-        ...(date && { date }),
+        ...(queryDate && { date: queryDate }),
       },
       select: {
         id: true,
@@ -33,9 +49,48 @@ export class StatisticService {
         createdAt: true,
       },
     });
+    
+    // 如果没有找到数据，对于月度统计可以尝试不同的日期格式
+    if (!data && type === 'monthly') {
+      console.log('尝试其他日期格式查询月度统计');
+      
+      // 查询所有统计记录，找出匹配的月度记录
+      const allStats = await this.prisma.statistics.findMany({
+        where: {
+          type: 'monthly',
+        },
+        select: {
+          id: true,
+          type: true,
+          date: true,
+          totalAmount: true,
+          totalCount: true,
+          income: true,
+          expense: true,
+          tagStats: true,
+          updatedAt: true,
+          createdAt: true,
+        },
+      });
+      
+      console.log('找到所有月度统计:', allStats.map(s => ({ id: s.id, date: s.date })));
+      
+      // 检查是否有匹配的月份
+      const targetMonth = date.substring(0, 7); // 提取 YYYY-MM 部分
+      data = allStats.find(s => s.date.startsWith(targetMonth));
+      
+      if (data) {
+        console.log('找到匹配的月度统计:', { id: data.id, date: data.date });
+      }
+    }
+    
     if (!data) {
+      console.log('未找到统计数据');
       throw new NotFoundException('统计数据不存在');
     }
+    
+    console.log('返回统计数据:', { id: data.id, date: data.date, type: data.type });
+    
     return {
       ...data,
       createdAt: moment(data.createdAt).format('YYYY-MM-DD HH:mm:ss'),
@@ -46,12 +101,34 @@ export class StatisticService {
 
   async trigger(params) {
     const { type: statType, date } = params;
-    const formattedDate = moment(date).format('YYYY-MM-DD');
+    
+    // 针对月度和日度统计使用不同的日期处理逻辑
+    let formattedDate;
+    let datePrefix;
+    
+    if (statType === 'monthly') {
+      // 如果是月度统计，确保日期格式为 YYYY-MM
+      // 先规范化输入日期格式
+      if (date.length <= 7) {  // 如果输入的是类似 "2025-03" 的格式
+        formattedDate = moment(date + '-01').format('YYYY-MM-DD');  // 添加日期部分
+        datePrefix = date;  // 直接使用原始输入的 YYYY-MM
+      } else {
+        formattedDate = moment(date).format('YYYY-MM-DD');
+        datePrefix = moment(formattedDate).format('YYYY-MM');
+      }
+      console.log('月度统计 - 日期处理:', { 原始日期: date, 格式化日期: formattedDate, 查询前缀: datePrefix });
+    } else {
+      // 日度统计
+      formattedDate = moment(date).format('YYYY-MM-DD');
+      datePrefix = formattedDate;
+      console.log('日度统计 - 日期处理:', { 原始日期: date, 格式化日期: formattedDate, 查询前缀: datePrefix });
+    }
+    
     // 测试查询条件
     const testQuery = await this.prisma.record.findMany({
       where: {
         recordTime: {
-          startsWith: formattedDate,
+          startsWith: datePrefix,
         },
       },
       distinct: ['type'], // 查看所有可能的 type 值
@@ -60,25 +137,11 @@ export class StatisticService {
       '数据库中的 type 值:',
       testQuery.map((r) => r.type),
     );
-    let startDate, endDate;
-    if (statType === 'monthly') {
-      startDate = moment(formattedDate).startOf('month').format('YYYY-MM-DD');
-      endDate = moment(formattedDate).endOf('month').format('YYYY-MM-DD');
-    } else if (statType === 'daily') {
-      startDate = moment(formattedDate).startOf('day').format('YYYY-MM-DD');
-      endDate = moment(formattedDate).endOf('day').format('YYYY-MM-DD');
-    }
 
-    const datePrefix =
-      statType === 'monthly'
-        ? moment(formattedDate).format('YYYY-MM')
-        : formattedDate;
-
+    // 查询记录
     const records = await this.prisma.record.findMany({
       where: {
         recordTime: {
-          // gte: startDate,
-          // lte: endDate,
           startsWith: datePrefix,
         },
         isDeleted: false,
@@ -87,7 +150,9 @@ export class StatisticService {
         tag: true,
       },
     });
-    console.log('records', records);
+    console.log('查询条件:', { datePrefix, statType });
+    console.log(`找到记录数: ${records.length}`);
+    
     let totalAmount = 0,
       income = 0,
       expense = 0,
@@ -117,7 +182,7 @@ export class StatisticService {
       where: {
         type_date: {
           type: statType,
-          date,
+          date: formattedDate,
         },
       },
       update: {
@@ -141,8 +206,26 @@ export class StatisticService {
       },
     });
 
+    // 添加更多日志以便调试
+    console.log('统计数据已保存:', {
+      type: statType,
+      date: formattedDate,
+      recordCount: records.length,
+      totalAmount,
+      income,
+      expense
+    });
+
     return {
       message: `${statType}统计已完成，统计日期：${formattedDate}`,
+      data: {
+        type: statType,
+        date: formattedDate,
+        recordCount: records.length,
+        totalAmount,
+        income,
+        expense
+      }
     };
   }
 

@@ -1,11 +1,11 @@
 import { IsString, IsNotEmpty, IsEnum, IsObject } from 'class-validator';
 
-enum NotificationType {
+export enum NotificationType {
   MONTHLY_BUDGET = 'MONTHLY_BUDGET',
   TAG_BUDGET = 'TAG_BUDGET',
 }
 
-enum NotificationLevel {
+export enum NotificationLevel {
   HIGH = 'HIGH',
   MEDIUM = 'MEDIUM',
   LOW = 'LOW',
@@ -33,5 +33,7 @@ export class CreateNotificationDto {
     spentPercentage: number;
     remainingAmount: number;
     tagName?: string;
+    year?: number;
+    month?: number;
   };
 }

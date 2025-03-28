@@ -2,12 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBudgetDto } from './dto/create-budget.dto';
 import { WebhookService } from '../webhook/webhook.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType, NotificationLevel } from '../notifications/dto/create-notification.dto';
 
 @Injectable()
 export class BudgetsService {
   constructor(
     private prisma: PrismaService,
     private webhookService: WebhookService,
+    private notificationsService: NotificationsService,
   ) {}
 
   // 创建预算
@@ -96,18 +99,18 @@ export class BudgetsService {
     if (!usage) return null;
 
     const { spentPercentage } = usage;
-    let notificationLevel: 'HIGH' | 'MEDIUM' | 'LOW' = null;
+    let notificationLevel: NotificationLevel = null;
     let message = '';
 
     // 根据使用比例设置通知级别和消息
     if (spentPercentage >= 90) {
-      notificationLevel = 'HIGH';
+      notificationLevel = NotificationLevel.HIGH;
       message = `您的月度预算已使用 ${spentPercentage.toFixed(1)}%，即将超出预算！`;
     } else if (spentPercentage >= 80) {
-      notificationLevel = 'MEDIUM';
+      notificationLevel = NotificationLevel.MEDIUM;
       message = `您的月度预算已使用 ${spentPercentage.toFixed(1)}%，请注意控制支出。`;
     } else if (spentPercentage >= 70) {
-      notificationLevel = 'LOW';
+      notificationLevel = NotificationLevel.LOW;
       message = `您的月度预算已使用 ${spentPercentage.toFixed(1)}%。`;
     }
 
@@ -131,25 +134,25 @@ export class BudgetsService {
 
       // 如果没有发送过该级别的通知，创建新通知
       if (!existingNotification) {
-        await this.prisma.notification.create({
+        // 使用通知服务创建通知
+        await this.notificationsService.create({
+          userId,
+          type: NotificationType.MONTHLY_BUDGET,
+          message,
+          level: notificationLevel,
           data: {
-            userId,
-            type: 'MONTHLY_BUDGET',
-            message,
-            level: notificationLevel,
-            data: {
-              year,
-              month,
-              budgetAmount: usage.budget.amount,
-              spentAmount: usage.spentAmount,
-              spentPercentage,
-              remainingAmount: usage.remainingAmount
-            },
+            spentAmount: usage.spentAmount,
+            budgetAmount: usage.budget.amount,
+            spentPercentage,
+            remainingAmount: usage.remainingAmount,
+            // 将year和month作为data的有效字段传递
+            year,
+            month,
           },
         });
 
-         // 发送企业微信通知
-         const webhookMessage = this.webhookService.formatBudgetMessage(
+        // 发送企业微信通知
+        const webhookMessage = this.webhookService.formatBudgetMessage(
           usage.budget,
           usage.spentAmount,
           spentPercentage
