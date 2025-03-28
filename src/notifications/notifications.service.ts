@@ -16,9 +16,15 @@ export class NotificationsService {
     });
   }
 
-  async findAll(userId: string) {
+  async findAll(userId?: string) {
+    const where = {};
+    
+    if (userId) {
+      where['userId'] = userId;
+    }
+    
     return this.prisma.notification.findMany({
-      where: { userId },
+      where,
       orderBy: { createdAt: 'desc' },
     });
   }

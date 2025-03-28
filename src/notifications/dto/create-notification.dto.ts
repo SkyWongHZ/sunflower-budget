@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsEnum, IsObject } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsObject, IsOptional } from 'class-validator';
 
 export enum NotificationType {
   MONTHLY_BUDGET = 'MONTHLY_BUDGET',
@@ -13,8 +13,8 @@ export enum NotificationLevel {
 
 export class CreateNotificationDto {
   @IsString()
-  @IsNotEmpty()
-  userId: string;
+  @IsOptional()
+  userId?: string;
 
   @IsEnum(NotificationType)
   type: NotificationType;
@@ -35,5 +35,6 @@ export class CreateNotificationDto {
     tagName?: string;
     year?: number;
     month?: number;
+    isMidMonthReminder?: boolean;
   };
 }

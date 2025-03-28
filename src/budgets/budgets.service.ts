@@ -13,21 +13,19 @@ export class BudgetsService {
     private notificationsService: NotificationsService,
   ) {}
 
-  // 创建预算
-  async create(userId: string, createBudgetDto: CreateBudgetDto) {
+  // 创建预算（不再依赖用户ID）
+  async create(createBudgetDto: CreateBudgetDto) {
     return this.prisma.budget.create({
       data: {
-        userId,
         ...createBudgetDto,
       },
     });
   }
 
-  // 获取用户某月预算
-  async findOne(userId: string, year: number, month: number) {
+  // 获取某月预算（不再依赖用户ID）
+  async findOne(year: number, month: number) {
     return this.prisma.budget.findFirst({
       where: {
-        userId,
         year,
         month,
         isDeleted: false,
@@ -35,55 +33,39 @@ export class BudgetsService {
     });
   }
 
-  // 获取预算使用情况
-  async getBudgetUsage(userId: string, year: number, month: number) {
-    const budget = await this.findOne(userId, year, month);
+  // 获取预算使用情况（不再依赖用户ID）
+  async getBudgetUsage(year: number, month: number) {
+    const budget = await this.findOne(year, month);
     if (!budget) return null;
-
-    // // 格式化日期范围为字符串
-    // const startDate = new Date(Date.UTC(year, month - 1, 1));  // 月初
-    // const endDate = new Date(Date.UTC(year, month, 0));      // 月末
-
 
     // 构建日期前缀匹配
     const datePrefix = `${year}-${month.toString().padStart(2, '0')}`;
 
-
-  //   console.log('查询日期范围:', {
-  //     startDate: startDate.toISOString(),
-  //     endDate: endDate.toISOString()
-  // });
-
     // 计算当月支出
     const totalExpense = await this.prisma.record.aggregate({
-        where: {
-            // userId,
-            type: 'expense',
-            recordTime: {
-              startsWith: datePrefix // 使用字符串前缀匹配
-            },
-            isDeleted: false,
+      where: {
+        type: 'expense',
+        recordTime: {
+          startsWith: datePrefix // 使用字符串前缀匹配
         },
-        _sum: {
-            amount: true,
-        },
+        isDeleted: false,
+      },
+      _sum: {
+        amount: true,
+      },
     });
 
     console.log('查询条件:', {
-      // userId,
       type: 'expense',
       recordTime: {
-          startsWith: datePrefix
+        startsWith: datePrefix
       },
       isDeleted: false
-  });
+    });
 
     const spentAmount = totalExpense._sum.amount || 0;
     console.log('找到的记录:', spentAmount);
-
     console.log('totalExpense', totalExpense);
-
-    
 
     return {
       budget,
@@ -93,9 +75,9 @@ export class BudgetsService {
     };
   }
 
-  // 检查预算并创建通知
-  async checkBudgetAndNotify(userId: string, year: number, month: number) {
-    const usage = await this.getBudgetUsage(userId, year, month);
+  // 检查预算并创建通知（不再依赖用户ID）
+  async checkBudgetAndNotify(year: number, month: number) {
+    const usage = await this.getBudgetUsage(year, month);
     if (!usage) return null;
 
     const { spentPercentage } = usage;
@@ -105,25 +87,23 @@ export class BudgetsService {
     // 根据使用比例设置通知级别和消息
     if (spentPercentage >= 90) {
       notificationLevel = NotificationLevel.HIGH;
-      message = `您的月度预算已使用 ${spentPercentage.toFixed(1)}%，即将超出预算！`;
+      message = `月度预算已使用 ${spentPercentage.toFixed(1)}%，即将超出预算！`;
     } else if (spentPercentage >= 80) {
       notificationLevel = NotificationLevel.MEDIUM;
-      message = `您的月度预算已使用 ${spentPercentage.toFixed(1)}%，请注意控制支出。`;
+      message = `月度预算已使用 ${spentPercentage.toFixed(1)}%，请注意控制支出。`;
     } else if (spentPercentage >= 70) {
       notificationLevel = NotificationLevel.LOW;
-      message = `您的月度预算已使用 ${spentPercentage.toFixed(1)}%。`;
+      message = `月度预算已使用 ${spentPercentage.toFixed(1)}%。`;
     }
 
     // 只在需要发送通知时处理
     if (notificationLevel) {
-      // 检查是否已存在相同级别的通知
+      // 检查是否已存在相同级别的通知（现在不再按用户过滤）
       const existingNotification = await this.prisma.notification.findFirst({
         where: {
-          userId,
-          type: 'MONTHLY_BUDGET',
+          type: NotificationType.MONTHLY_BUDGET,
           level: notificationLevel,
           data: {
-            // 修改这里的 Json 查询方式
             equals: {
               year,
               month,
@@ -136,18 +116,17 @@ export class BudgetsService {
       if (!existingNotification) {
         // 使用通知服务创建通知
         await this.notificationsService.create({
-          userId,
+          userId: null, // 不再与特定用户关联
           type: NotificationType.MONTHLY_BUDGET,
           message,
           level: notificationLevel,
           data: {
-            spentAmount: usage.spentAmount,
-            budgetAmount: usage.budget.amount,
-            spentPercentage,
-            remainingAmount: usage.remainingAmount,
-            // 将year和month作为data的有效字段传递
             year,
             month,
+            budgetAmount: usage.budget.amount,
+            spentAmount: usage.spentAmount,
+            spentPercentage,
+            remainingAmount: usage.remainingAmount
           },
         });
 
@@ -163,6 +142,4 @@ export class BudgetsService {
 
     return usage;
   }
-
-
 }
