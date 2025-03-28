@@ -4,6 +4,7 @@ import { CreateBudgetDto } from './dto/create-budget.dto';
 import { WebhookService } from '../webhook/webhook.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType, NotificationLevel } from '../notifications/dto/create-notification.dto';
+import { log } from 'node:console';
 
 @Injectable()
 export class BudgetsService {
@@ -65,7 +66,7 @@ export class BudgetsService {
 
     const spentAmount = totalExpense._sum.amount || 0;
     console.log('找到的记录:', spentAmount);
-    console.log('totalExpense', totalExpense);
+    console.log('totalExpense1', totalExpense);
 
     return {
       budget,
@@ -77,6 +78,7 @@ export class BudgetsService {
 
   // 检查预算并创建通知（不再依赖用户ID）
   async checkBudgetAndNotify(year: number, month: number) {
+    console.log('checkBudgetAndNotify', year, month);
     const usage = await this.getBudgetUsage(year, month);
     if (!usage) return null;
 
