@@ -4,7 +4,7 @@ import { CreateBudgetDto } from './dto/create-budget.dto';
 import { WebhookService } from '../webhook/webhook.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType, NotificationLevel } from '../notifications/dto/create-notification.dto';
-import { log } from 'node:console';
+
 
 @Injectable()
 export class BudgetsService {
@@ -68,11 +68,25 @@ export class BudgetsService {
     console.log('找到的记录:', spentAmount);
     console.log('totalExpense1', totalExpense);
 
-    return {
+    // 计算百分比和剩余金额
+    const percentage = (spentAmount / budget.amount) * 100;
+    const remainingAmount = budget.amount - spentAmount;
+
+    // 存储完整的使用情况供内部使用
+    const fullUsage = {
       budget,
       spentAmount,
-      spentPercentage: (spentAmount / budget.amount) * 100,
-      remainingAmount: budget.amount - spentAmount,
+      spentPercentage: percentage,
+      remainingAmount,
+    };
+
+    // 返回符合接口文档的格式
+    return {
+      budget: budget.amount,
+      spent: spentAmount,
+      remaining: remainingAmount,
+      percentage,
+      _fullUsage: fullUsage // 内部使用，不会暴露给API响应
     };
   }
 
@@ -82,20 +96,26 @@ export class BudgetsService {
     const usage = await this.getBudgetUsage(year, month);
     if (!usage) return null;
 
-    const { spentPercentage } = usage;
+    // 从修改后的 usage 对象中获取百分比
+    const { percentage, _fullUsage } = usage;
     let notificationLevel: NotificationLevel = null;
     let message = '';
+    // 定义状态变量，用于返回给接口
+    let status = 'normal';
 
     // 根据使用比例设置通知级别和消息
-    if (spentPercentage >= 90) {
+    if (percentage >= 90) {
       notificationLevel = NotificationLevel.HIGH;
-      message = `月度预算已使用 ${spentPercentage.toFixed(1)}%，即将超出预算！`;
-    } else if (spentPercentage >= 80) {
+      message = `月度预算已使用 ${percentage.toFixed(1)}%，即将超出预算！`;
+      status = 'exceeded';
+    } else if (percentage >= 80) {
       notificationLevel = NotificationLevel.MEDIUM;
-      message = `月度预算已使用 ${spentPercentage.toFixed(1)}%，请注意控制支出。`;
-    } else if (spentPercentage >= 70) {
+      message = `月度预算已使用 ${percentage.toFixed(1)}%，请注意控制支出。`;
+      status = 'warning';
+    } else if (percentage >= 70) {
       notificationLevel = NotificationLevel.LOW;
-      message = `月度预算已使用 ${spentPercentage.toFixed(1)}%。`;
+      message = `月度预算已使用 ${percentage.toFixed(1)}%。`;
+      status = 'warning';
     }
 
     // 只在需要发送通知时处理
@@ -125,23 +145,27 @@ export class BudgetsService {
           data: {
             year,
             month,
-            budgetAmount: usage.budget.amount,
-            spentAmount: usage.spentAmount,
-            spentPercentage,
-            remainingAmount: usage.remainingAmount
+            budgetAmount: _fullUsage.budget.amount,
+            spentAmount: _fullUsage.spentAmount,
+            spentPercentage: percentage,
+            remainingAmount: _fullUsage.remainingAmount
           },
         });
 
         // 发送企业微信通知
         const webhookMessage = this.webhookService.formatBudgetMessage(
-          usage.budget,
-          usage.spentAmount,
-          spentPercentage
+          _fullUsage.budget,
+          _fullUsage.spentAmount,
+          percentage
         );
         await this.webhookService.sendWorkWeixinMessage(webhookMessage);
       }
     }
 
-    return usage;
+    // 返回符合接口文档的格式，只包含状态和百分比
+    return {
+      status,
+      percentage
+    };
   }
 }
