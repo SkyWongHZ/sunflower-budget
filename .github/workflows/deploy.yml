@@ -78,6 +78,9 @@ jobs:
           # 停止旧服务
           docker compose down || true
 
+          # 登录到阿里云容器镜像服务
+          echo "${{ secrets.ALIYUN_CR_PASSWORD }}" | docker login ${{ env.REGISTRY }} -u "${{ secrets.ALIYUN_USERNAME }}" --password-stdin
+
           # 创建开发环境配置文件
           cat > .env << EOF
           NODE_ENV=development
