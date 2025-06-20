@@ -36,7 +36,8 @@ lerna-debug.log*
 !.vscode/extensions.json
 
 # dotenv environment variable files
-.env
+.env*
+!.env.example
 .env.development.local
 .env.test.local
 .env.production.local
@@ -55,8 +56,14 @@ pids
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
-.env
-docker-compose.yml
+# Docker
+docker-compose.override.yml
+docker-compose.prod.yml
 
+# Package managers
 pnpm-lock.yaml
 pnpm-lock.yml
+
+# Backup files
+*.backup
+*.bak

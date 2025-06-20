@@ -1,0 +1,149 @@
+name: Deploy to Development Server
+
+on:
+  workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: '跳过测试'
+        required: false
+        default: false
+        type: boolean
+      force_rebuild:
+        description: '强制重新构建镜像'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  REGISTRY: registry.cn-hangzhou.aliyuncs.com
+  NAMESPACE: sunflower-budget
+  IMAGE_NAME: sunflower-budget-app
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: |
+        npm ci
+        npx prisma generate
+
+    - name: Run tests
+      if: ${{ !inputs.skip_tests }}
+      run: npm run test
+
+    - name: Build application
+      run: npm run build
+
+    - name: Login to Aliyun Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ secrets.ALIYUN_USERNAME }}
+        password: ${{ secrets.ALIYUN_CR_PASSWORD }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:dev
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        no-cache: ${{ inputs.force_rebuild }}
+
+    - name: Deploy to development server
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.ALIYUN_HOST }}
+        username: ${{ secrets.ALIYUN_USERNAME }}
+        key: ${{ secrets.ALIYUN_SERVER_SSH_KEY }}
+        port: 22
+        script: |
+          # 创建应用目录
+          mkdir -p /opt/sunflower-budget-dev
+          cd /opt/sunflower-budget-dev
+
+          # 停止旧服务
+          docker compose down || true
+
+          # 创建开发环境配置文件
+          cat > .env << EOF
+          NODE_ENV=development
+          DATABASE_URL=mongodb://root:19931010@${{ secrets.ALIYUN_HOST }}:27017/sunflower_budget?authSource=admin&replicaSet=rs0
+          MAIL_USER=noreply@example.com
+          MAIL_PASS=temp_password
+          MAIL_FROM_NAME=Sunflower Budget
+          REDIS_PASSWORD=temp_redis_pass
+          MINIO_ENDPOINT=${{ secrets.MINIO_ENDPOINT }}
+          MINIO_PORT=9000
+          MINIO_USE_SSL=${{ secrets.MINIO_USE_SSL }}
+          MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY }}
+          MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY }}
+          MINIO_BUCKET=sunflower-budget
+          WORK_WEIXIN_WEBHOOK_KEY=${{ secrets.JWT_SECRET }}
+          EOF
+
+          # 创建开发环境 docker-compose 文件
+          cat > docker-compose.yml << 'EOF'
+          version: '3.8'
+          services:
+            app:
+              image: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:dev
+              container_name: sunflower-budget-dev
+              ports:
+                - "3000:3000"
+              env_file:
+                - .env
+              restart: unless-stopped
+              networks:
+                - dev-network
+
+            nginx:
+              image: nginx:alpine
+              container_name: sunflower-budget-nginx-dev
+              ports:
+                - "8899:8899"
+              volumes:
+                - ./nginx.conf:/etc/nginx/nginx.conf:ro
+              depends_on:
+                - app
+              restart: unless-stopped
+              networks:
+                - dev-network
+
+          networks:
+            dev-network:
+              driver: bridge
+          EOF
+
+          # 下载nginx配置文件
+          curl -o nginx.conf https://raw.githubusercontent.com/SkyWongHZ/sunflower-budget/main/nginx.conf
+
+          # 拉取最新镜像并启动
+          docker pull ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:dev
+          docker compose up -d
+
+          # 显示运行状态
+          echo "=== 服务状态 ==="
+          docker compose ps
+          
+          echo ""
+          echo "=== 应用日志（最后10行）==="
+          docker logs --tail 10 sunflower-budget-dev || echo "应用容器还在启动中..."
+
+          echo ""
+          echo "✅ 开发环境部署完成!"
+          echo "🌐 API访问地址: http://${{ secrets.ALIYUN_HOST }}:8899/api"
+          echo "📊 API文档: http://${{ secrets.ALIYUN_HOST }}:8899/api/docs" 
